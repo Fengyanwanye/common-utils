@@ -21,8 +21,6 @@
         <commons.io.version>2.15.1</commons.io.version>
         <commons.fileupload.version>1.5</commons.fileupload.version>
         <commons.collections.version>3.2.2</commons.collections.version>
-        <jasperreports.version>4.7.0</jasperreports.version>
-        <groovy-all.version>2.3.7</groovy-all.version>
         <fastjson.version>2.0.43</fastjson.version>
         <poi.version>5.2.5</poi.version>
         <openfeign.version>4.1.0</openfeign.version>
@@ -163,16 +161,7 @@
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
         </dependency>
-        <dependency>
-            <groupId>net.sf.jasperreports</groupId>
-            <artifactId>jasperreports</artifactId>
-            <version>${jasperreports.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-all</artifactId>
-            <version>${groovy-all.version}</version>
-        </dependency>
+
 
         <dependency>
             <groupId>org.springframework.cloud</groupId>
