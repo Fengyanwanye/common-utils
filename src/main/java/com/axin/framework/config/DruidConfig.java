@@ -1,11 +1,12 @@
 package com.axin.framework.config;
 
-import com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceAutoConfigure;
-import com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceBuilder;
-import com.alibaba.druid.spring.boot.autoconfigure.properties.DruidStatProperties;
+import com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure;
+import com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceBuilder;
+import com.alibaba.druid.spring.boot3.autoconfigure.properties.DruidStatProperties;
 import com.alibaba.druid.util.Utils;
 import com.axin.framework.aspectj.lang.enums.DataSourceType;
 import com.axin.framework.datasource.DynamicDataSource;
+import jakarta.servlet.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -19,7 +20,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
-import javax.servlet.*;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.util.HashMap;

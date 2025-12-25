@@ -1,5 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-com.axin.framework.config.DruidConfig,\
-com.axin.common.utils.StringUtils,\
-com.axin.framework.aspectj.DataSourceAspect,\
-com.axin.framework.config.CommonConfig

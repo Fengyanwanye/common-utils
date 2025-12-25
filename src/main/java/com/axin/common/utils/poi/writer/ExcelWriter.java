@@ -1,6 +1,7 @@
 package com.axin.common.utils.poi.writer;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.OutputStream;
 import java.util.List;
 
