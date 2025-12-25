@@ -1,4 +1,4 @@
 com.axin.framework.config.DruidConfig
 com.axin.framework.aspectj.DataSourceAspect
 com.axin.framework.config.CommonConfig
-com.axin.common.utils.SpringUtils
+com.axin.common.utils.spring.SpringUtils
