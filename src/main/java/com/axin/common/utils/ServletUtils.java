@@ -8,7 +8,10 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Servlet工具类
@@ -48,13 +51,29 @@ public class ServletUtils {
     }
 
     /**
-     * 获取请求参数值
+     * 获取请求参数值（同时支持GET和POST请求）
+     * 
+     * <p>优先从URL参数获取，如果获取不到则尝试从POST请求体中获取</p>
      * 
      * @param name 参数名
      * @return 参数值，如果不存在则返回null
      */
     public static String getParameter(String name) {
-        return getRequest().getParameter(name);
+        HttpServletRequest request = getRequest();
+        // 优先从URL参数获取
+        String value = request.getParameter(name);
+        if (value != null) {
+            return value;
+        }
+        // 如果是POST请求且Content-Type为application/json，则从请求体获取
+        if ("POST".equalsIgnoreCase(request.getMethod())) {
+            Map<String, Object> bodyParams = getRequestBodyParams(request);
+            if (bodyParams != null && bodyParams.containsKey(name)) {
+                Object obj = bodyParams.get(name);
+                return obj != null ? obj.toString() : null;
+            }
+        }
+        return null;
     }
 
     /**
@@ -148,6 +167,50 @@ public class ServletUtils {
         }
 
         return null;
+    }
+
+    /**
+     * 获取POST请求体中的JSON参数
+     * 
+     * <p>从请求体中解析JSON数据并转换为Map</p>
+     * <p>注意：此方法会缓存请求体参数，避免重复解析</p>
+     * 
+     * @param request HttpServletRequest对象
+     * @return 请求体参数Map，如果解析失败则返回null
+     */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> getRequestBodyParams(HttpServletRequest request) {
+        // 从request attribute中获取缓存的参数
+        Object cached = request.getAttribute("__body_params_cache__");
+        if (cached != null) {
+            return (Map<String, Object>) cached;
+        }
+        
+        String contentType = request.getContentType();
+        if (contentType == null || !contentType.contains("application/json")) {
+            return null;
+        }
+        
+        try {
+            BufferedReader reader = request.getReader();
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            String body = sb.toString();
+            if (StringUtils.isEmpty(body)) {
+                return null;
+            }
+            
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> params = mapper.readValue(body, Map.class);
+            // 缓存到request attribute中
+            request.setAttribute("__body_params_cache__", params);
+            return params;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**

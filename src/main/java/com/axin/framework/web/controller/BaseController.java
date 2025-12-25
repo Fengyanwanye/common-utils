@@ -84,6 +84,7 @@ public class BaseController {
      * 开启分页功能
      * 
      * <p>从请求参数中获取分页信息，并启动PageHelper分页。</p>
+     * <p>同时支持GET和POST请求（POST请求需要Content-Type为application/json）。</p>
      * <p>支持的请求参数：</p>
      * <ul>
      *   <li>pageNum: 页码</li>
@@ -91,6 +92,17 @@ public class BaseController {
      *   <li>orderByColumn: 排序字段</li>
      *   <li>isAsc: 是否升序</li>
      * </ul>
+     * 
+     * <p>使用示例（POST请求）：</p>
+     * <pre>
+     * // 请求体：
+     * {
+     *   "pageNum": 1,
+     *   "pageSize": 10,
+     *   "orderByColumn": "createTime",
+     *   "isAsc": "desc"
+     * }
+     * </pre>
      */
     protected void startPage() {
         PageDomain pageDomain = TableSupport.buildPageRequest();
@@ -110,10 +122,10 @@ public class BaseController {
      * @param list 查询结果列表
      * @return 包含分页信息的ResponseEntity对象
      */
-    protected ResponseEntity getDataTable(List<?> list) {
-        TableDataInfo rspData = new TableDataInfo();
+    protected <T> ResponseEntity<TableDataInfo<List<T>>> getDataTable(List<T> list) {
+        TableDataInfo<List<T>> rspData = new TableDataInfo<>();
         rspData.setRows(list);
-        rspData.setTotal(new PageInfo(list).getTotal());
+        rspData.setTotal(new PageInfo<>(list).getTotal());
         return ResponseEntity.ok(rspData);
     }
 
@@ -126,10 +138,10 @@ public class BaseController {
      * @param totalList 用于统计总数的列表
      * @return 包含分页信息的ResponseEntity对象
      */
-    protected ResponseEntity getDataTable(List<?> responseList, List<?> totalList) {
-        TableDataInfo rspData = new TableDataInfo();
+    protected <T> ResponseEntity<TableDataInfo<List<T>>> getDataTable(List<T> responseList, List<T> totalList) {
+        TableDataInfo<List<T>> rspData = new TableDataInfo<>();
         rspData.setRows(responseList);
-        rspData.setTotal(new PageInfo(totalList).getTotal());
+        rspData.setTotal(new PageInfo<>(totalList).getTotal());
         return ResponseEntity.ok(rspData);
     }
 }
