@@ -1,5 +1,6 @@
 package com.axin.framework.config;
 
+import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceAutoConfigure;
 import com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceBuilder;
 import com.alibaba.druid.spring.boot3.autoconfigure.properties.DruidStatProperties;
@@ -22,6 +23,7 @@ import org.springframework.context.annotation.Primary;
 
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -94,6 +96,7 @@ public class DruidConfig {
      * 
      * <p>主数据源用于处理写操作和强一致性读操作。</p>
      * <p>如果配置了encryJdbc.flag=true，则使用AxinDruidDataSourceWrapper支持密码解密。</p>
+     * <p>配置stat和wall过滤器，用于SQL监控和防火墙功能。</p>
      * 
      * @return 主数据源实例
      */
@@ -101,7 +104,23 @@ public class DruidConfig {
     @ConfigurationProperties("spring.datasource.druid.master")
     @ConditionalOnProperty(prefix = "spring.datasource.druid.master", name = "url")
     public DataSource masterDataSource() {
-        return this.encryJdbc ? new AxinDruidDataSourceWrapper() : DruidDataSourceBuilder.create().build();
+        DruidDataSource dataSource = this.encryJdbc ? 
+            new AxinDruidDataSourceWrapper() : 
+            (DruidDataSource) DruidDataSourceBuilder.create().build();
+        
+        // 设置数据源名称，用于Druid监控页面识别
+        dataSource.setName("master");
+        
+        // 配置Druid Filter，确保SQL监控数据能被收集
+        try {
+            dataSource.setFilters("stat,wall");
+            System.out.println("主数据源已配置Druid监控Filter: stat,wall");
+        } catch (SQLException e) {
+            System.err.println("主数据源Filter配置失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return dataSource;
     }
 
     /**
@@ -109,6 +128,7 @@ public class DruidConfig {
      * 
      * <p>从数据源用于处理查询操作，分担主库压力。</p>
      * <p>只有当配置了spring.datasource.druid.slave.enabled=true时才会创建。</p>
+     * <p>配置stat和wall过滤器，用于SQL监控和防火墙功能。</p>
      * 
      * @return 从数据源实例
      */
@@ -116,7 +136,23 @@ public class DruidConfig {
     @ConfigurationProperties("spring.datasource.druid.slave")
     @ConditionalOnProperty(prefix = "spring.datasource.druid.slave", name = "enabled", havingValue = "true")
     public DataSource slaveDataSource() {
-        return this.encryJdbc ? new AxinDruidDataSourceWrapper() : DruidDataSourceBuilder.create().build();
+        DruidDataSource dataSource = this.encryJdbc ? 
+            new AxinDruidDataSourceWrapper() : 
+            (DruidDataSource) DruidDataSourceBuilder.create().build();
+        
+        // 设置数据源名称，用于Druid监控页面识别
+        dataSource.setName("slave");
+        
+        // 配置Druid Filter，确保SQL监控数据能被收集
+        try {
+            dataSource.setFilters("stat,wall");
+            System.out.println("从数据源已配置Druid监控Filter: stat,wall");
+        } catch (SQLException e) {
+            System.err.println("从数据源Filter配置失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return dataSource;
     }
 
     /**
