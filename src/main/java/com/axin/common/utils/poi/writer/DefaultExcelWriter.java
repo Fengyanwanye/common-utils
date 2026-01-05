@@ -92,6 +92,52 @@ public class DefaultExcelWriter<T> implements ExcelWriter<T> {
         return write(Collections.emptyList(), sheetName);
     }
 
+    @Override
+    public void writeTemplate(String sheetName, T example, OutputStream outputStream) throws Exception {
+        try (Workbook workbook = createWorkbook()) {
+            writeTemplateToWorkbook(workbook, sheetName, example);
+            workbook.write(outputStream);
+        } catch (Exception e) {
+            log.error("导出Excel模板异常", e);
+            throw new CustomException("导出Excel模板失败，请联系网站管理员！");
+        }
+    }
+
+    @Override
+    public void writeTemplate(String sheetName, T example, HttpServletResponse response) throws Exception {
+        try (OutputStream out = response.getOutputStream()) {
+            writeTemplate(sheetName, example, out);
+        } catch (Exception e) {
+            log.error("导出Excel模板异常", e);
+            throw new CustomException("导出Excel模板失败，请联系网站管理员！");
+        }
+    }
+
+    /**
+     * 将模板写入Workbook（带样例数据）
+     */
+    private void writeTemplateToWorkbook(Workbook workbook, String sheetName, T example) {
+        ExcelStyleBuilder styleBuilder = new ExcelStyleBuilder(workbook);
+        Sheet sheet = workbook.createSheet(sheetName);
+        
+        // 创建表头
+        Row headerRow = sheet.createRow(0);
+        createHeader(sheet, headerRow, styleBuilder);
+        
+        // 如果有样例数据，在第一行填充样例
+        if (example != null) {
+            Row exampleRow = sheet.createRow(1);
+            exampleRow.setHeight(maxRowHeight);
+            fillRowData(exampleRow, styleBuilder, example);
+            
+            // 从第二行开始创建预格式化空行
+            createTemplateRows(sheet, styleBuilder, 2);
+        } else {
+            // 没有样例数据，从第一行开始创建空行
+            createTemplateRows(sheet, styleBuilder, 1);
+        }
+    }
+
     /**
      * 将数据写入Workbook
      */
@@ -130,6 +176,9 @@ public class DefaultExcelWriter<T> implements ExcelWriter<T> {
         if (type == Excel.Type.EXPORT && !data.isEmpty()) {
             fillData(sheet, styleBuilder, data, sheetIndex);
             addStatisticsRow(sheet, styleBuilder, data, sheetIndex);
+        } else if (data.isEmpty()) {
+            // 导出模板时，创建预格式化的空行，确保单元格格式生效
+            createTemplateRows(sheet, styleBuilder);
         }
     }
 
@@ -178,6 +227,11 @@ public class DefaultExcelWriter<T> implements ExcelWriter<T> {
         if (attr.combo().length > 0) {
             setComboBox(sheet, attr.combo(), 1, 100, column, column);
         }
+        
+        // 如果是文本类型，设置整列为文本格式（防止Excel自动转换yyyy-MM等为日期）
+        if (attr.cellType() == Excel.ColumnType.STRING) {
+            setColumnTextFormat(sheet, column);
+        }
     }
 
     /**
@@ -213,6 +267,52 @@ public class DefaultExcelWriter<T> implements ExcelWriter<T> {
     }
 
     /**
+     * 设置整列为文本格式（防止Excel自动转换格式）
+     */
+    private void setColumnTextFormat(Sheet sheet, int column) {
+        // 使用数据验证强制设置为文本格式
+        DataValidationHelper helper = sheet.getDataValidationHelper();
+        DataValidationConstraint constraint = helper.createTextLengthConstraint(
+            DataValidationConstraint.OperatorType.BETWEEN, "0", "255");
+        CellRangeAddressList regions = new CellRangeAddressList(1, 65535, column, column);
+        DataValidation validation = helper.createValidation(constraint, regions);
+        validation.setShowErrorBox(false);
+        sheet.addValidationData(validation);
+    }
+
+    /**
+     * 创建模板预格式化空行（确保cellType生效）
+     */
+    private void createTemplateRows(Sheet sheet, ExcelStyleBuilder styleBuilder) {
+        createTemplateRows(sheet, styleBuilder, 1);
+    }
+
+    /**
+     * 创建模板预格式化空行（确保cellType生效）
+     *
+     * @param sheet        Sheet对象
+     * @param styleBuilder 样式构建器
+     * @param startRowNum  开始行号（1-based）
+     */
+    private void createTemplateRows(Sheet sheet, ExcelStyleBuilder styleBuilder, int startRowNum) {
+        // 创建100行预格式化的空行，确保单元格格式生效
+        int endRowNum = startRowNum + 99;
+        for (int rowNum = startRowNum; rowNum <= endRowNum; rowNum++) {
+            Row row = sheet.createRow(rowNum);
+            row.setHeight(maxRowHeight);
+            
+            for (int column = 0; column < fieldInfos.size(); column++) {
+                FieldInfo fieldInfo = fieldInfos.get(column);
+                Cell cell = row.createCell(column);
+                
+                // 设置单元格样式，确保文本格式生效
+                CellStyle style = getCellStyle(styleBuilder, fieldInfo.excel.align().value(), fieldInfo.excel);
+                cell.setCellStyle(style);
+            }
+        }
+    }
+
+    /**
      * 填充数据
      */
     private void fillData(Sheet sheet, ExcelStyleBuilder styleBuilder, List<T> data, int sheetIndex) {
@@ -244,7 +344,7 @@ public class DefaultExcelWriter<T> implements ExcelWriter<T> {
             Cell cell = row.createCell(column);
             
             // 设置样式
-            CellStyle style = getCellStyle(styleBuilder, fieldInfo.excel.align().value());
+            CellStyle style = getCellStyle(styleBuilder, fieldInfo.excel.align().value(), fieldInfo.excel);
             cell.setCellStyle(style);
             
             // 获取字段值
@@ -267,7 +367,44 @@ public class DefaultExcelWriter<T> implements ExcelWriter<T> {
     /**
      * 获取单元格样式
      */
-    private CellStyle getCellStyle(ExcelStyleBuilder styleBuilder, int align) {
+    private CellStyle getCellStyle(ExcelStyleBuilder styleBuilder, int align, Excel excel) {
+        // 根据cellType选择不同的样式
+        Excel.ColumnType cellType = excel.cellType();
+        
+        // 图片类型使用固定样式
+        if (cellType == Excel.ColumnType.IMAGE) {
+            return styleBuilder.getImageStyle();
+        }
+        
+        // 文本类型
+        if (cellType == Excel.ColumnType.STRING) {
+            switch (align) {
+                case 1:
+                    return styleBuilder.getTextStyle();
+                case 2:
+                    return styleBuilder.getTextCenterStyle();
+                case 3:
+                    return styleBuilder.getTextRightStyle();
+                default:
+                    return styleBuilder.getTextCenterStyle();
+            }
+        }
+        
+        // 数值类型
+        if (cellType == Excel.ColumnType.NUMERIC) {
+            switch (align) {
+                case 1:
+                    return styleBuilder.getNumericStyle();
+                case 2:
+                    return styleBuilder.getNumericCenterStyle();
+                case 3:
+                    return styleBuilder.getNumericRightStyle();
+                default:
+                    return styleBuilder.getNumericRightStyle();
+            }
+        }
+        
+        // 默认使用普通样式
         switch (align) {
             case 1:
                 return styleBuilder.getDataLeftStyle();
