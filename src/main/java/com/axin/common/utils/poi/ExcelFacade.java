@@ -12,6 +12,7 @@ import com.axin.common.utils.poi.writer.ExcelWriter;
 import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -262,7 +263,21 @@ public class ExcelFacade {
     public static <T> void exportTemplate(String sheetName, Class<T> clazz, 
                                           OutputStream outputStream) throws Exception {
         ExcelWriter<T> writer = new DefaultExcelWriter<>(clazz);
-        writer.write(null, sheetName, outputStream);
+        writer.write(Collections.emptyList(), sheetName, outputStream);
+    }
+
+    /**
+     * 生成Excel导入模板到输出流（带样例数据）
+     *
+     * @param sheetName    Sheet名称
+     * @param clazz        实体类
+     * @param example      样例数据，用于在模板第一行提供参考
+     * @param outputStream 输出流
+     */
+    public static <T> void exportTemplate(String sheetName, Class<T> clazz, T example,
+                                          OutputStream outputStream) throws Exception {
+        ExcelWriter<T> writer = new DefaultExcelWriter<>(clazz);
+        writer.writeTemplate(sheetName, example, outputStream);
     }
 
     /**
@@ -275,7 +290,21 @@ public class ExcelFacade {
     public static <T> void exportTemplate(String sheetName, Class<T> clazz, 
                                           HttpServletResponse response) throws Exception {
         ExcelWriter<T> writer = new DefaultExcelWriter<>(clazz);
-        writer.write(null, sheetName, response);
+        writer.write(Collections.emptyList(), sheetName, response);
+    }
+
+    /**
+     * 生成Excel导入模板到HTTP响应（带样例数据）
+     *
+     * @param sheetName Sheet名称
+     * @param clazz     实体类
+     * @param example   样例数据，用于在模板第一行提供参考
+     * @param response  HTTP响应
+     */
+    public static <T> void exportTemplate(String sheetName, Class<T> clazz, T example,
+                                          HttpServletResponse response) throws Exception {
+        ExcelWriter<T> writer = new DefaultExcelWriter<>(clazz);
+        writer.writeTemplate(sheetName, example, response);
     }
 
     // ==================== 工具方法 ====================

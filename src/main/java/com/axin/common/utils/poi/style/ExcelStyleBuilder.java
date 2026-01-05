@@ -71,6 +71,55 @@ public class ExcelStyleBuilder {
     }
 
     /**
+     * 获取文本格式样式（左对齐）
+     */
+    public CellStyle getTextStyle() {
+        return styleCache.computeIfAbsent("text", key -> createTextStyle(HorizontalAlignment.LEFT));
+    }
+
+    /**
+     * 获取文本格式样式（居中）
+     */
+    public CellStyle getTextCenterStyle() {
+        return styleCache.computeIfAbsent("text_center", key -> createTextStyle(HorizontalAlignment.CENTER));
+    }
+
+    /**
+     * 获取文本格式样式（右对齐）
+     */
+    public CellStyle getTextRightStyle() {
+        return styleCache.computeIfAbsent("text_right", key -> createTextStyle(HorizontalAlignment.RIGHT));
+    }
+
+    /**
+     * 获取数值格式样式（左对齐）
+     */
+    public CellStyle getNumericStyle() {
+        return styleCache.computeIfAbsent("numeric", key -> createNumericStyle(HorizontalAlignment.LEFT));
+    }
+
+    /**
+     * 获取数值格式样式（居中）
+     */
+    public CellStyle getNumericCenterStyle() {
+        return styleCache.computeIfAbsent("numeric_center", key -> createNumericStyle(HorizontalAlignment.CENTER));
+    }
+
+    /**
+     * 获取数值格式样式（右对齐）
+     */
+    public CellStyle getNumericRightStyle() {
+        return styleCache.computeIfAbsent("numeric_right", key -> createNumericStyle(HorizontalAlignment.RIGHT));
+    }
+
+    /**
+     * 获取图片格式样式（居中）
+     */
+    public CellStyle getImageStyle() {
+        return styleCache.computeIfAbsent("image", key -> createImageStyle());
+    }
+
+    /**
      * 创建表头样式
      */
     private CellStyle createHeaderStyle() {
@@ -133,6 +182,60 @@ public class ExcelStyleBuilder {
         CellStyle style = workbook.createCellStyle();
         style.setFillForegroundColor(IndexedColors.RED.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        return style;
+    }
+
+    /**
+     * 创建文本格式样式（防止Excel自动转换格式）
+     */
+    private CellStyle createTextStyle(HorizontalAlignment alignment) {
+        CellStyle style = createBaseStyle();
+        style.setAlignment(alignment);
+        
+        // 设置为文本格式，防止Excel自动将yyyy-MM等转换为日期
+        DataFormat format = workbook.createDataFormat();
+        style.setDataFormat(format.getFormat("@"));
+
+        Font font = workbook.createFont();
+        font.setFontName("Arial");
+        font.setFontHeightInPoints((short) 10);
+        style.setFont(font);
+
+        return style;
+    }
+
+    /**
+     * 创建数值格式样式
+     */
+    private CellStyle createNumericStyle(HorizontalAlignment alignment) {
+        CellStyle style = createBaseStyle();
+        style.setAlignment(alignment);
+        
+        // 设置为数值格式
+        DataFormat format = workbook.createDataFormat();
+        style.setDataFormat(format.getFormat("0.00"));
+
+        Font font = workbook.createFont();
+        font.setFontName("Arial");
+        font.setFontHeightInPoints((short) 10);
+        style.setFont(font);
+
+        return style;
+    }
+
+    /**
+     * 创建图片格式样式
+     */
+    private CellStyle createImageStyle() {
+        CellStyle style = createBaseStyle();
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+
+        Font font = workbook.createFont();
+        font.setFontName("Arial");
+        font.setFontHeightInPoints((short) 10);
+        style.setFont(font);
+
         return style;
     }
 

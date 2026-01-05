@@ -51,4 +51,24 @@ public interface ExcelWriter<T> {
      * @throws Exception 生成异常
      */
     String writeTemplate(String sheetName) throws Exception;
+
+    /**
+     * 生成导入模板（带样例数据）
+     *
+     * @param sheetName sheet名称
+     * @param example   样例数据
+     * @param outputStream 输出流
+     * @throws Exception 生成异常
+     */
+    void writeTemplate(String sheetName, T example, OutputStream outputStream) throws Exception;
+
+    /**
+     * 生成导入模板（带样例数据）到HTTP响应
+     *
+     * @param sheetName sheet名称
+     * @param example   样例数据
+     * @param response  HTTP响应
+     * @throws Exception 生成异常
+     */
+    void writeTemplate(String sheetName, T example, HttpServletResponse response) throws Exception;
 }
